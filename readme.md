@@ -19,40 +19,45 @@ A tool for automatically generating meaningful commit messages based on changes 
 
 ## Installation
 
-### Using pip
-
+1. Clone the repository:
 ```bash
-# Clone the repository
 git clone https://github.com/username/git-commit-generator.git
 cd git-commit-generator
-
-# Create a virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install requests
-
-# Optionally for clipboard support
-pip install pyperclip
 ```
 
-### Using conda
+2. Create and activate a virtual environment:
+```bash
+# Using venv (recommended)
+python -m venv venv
+# On Unix/macOS
+source venv/bin/activate
+# On Windows
+venv\Scripts\activate
+```
+
+3. Install dependencies using requirements.txt:
+```bash
+pip install -r requirements.txt
+```
+
+The requirements.txt file includes:
+- `requests>=2.31.0` - For making API calls to LLM providers
+- `pyperclip>=1.8.2` - Optional dependency for clipboard support
+
+If you don't need clipboard support, you can install only the required dependencies:
+```bash
+pip install requests>=2.31.0
+```
+
+### Alternative: Using conda
 
 ```bash
-# Clone the repository
-git clone https://github.com/username/git-commit-generator.git
-cd git-commit-generator
-
 # Create a conda environment
 conda create -n git-commit-gen python=3.9
 conda activate git-commit-gen
 
 # Install dependencies
-conda install -c conda-forge requests
-
-# Optionally for clipboard support
-conda install -c conda-forge pyperclip
+pip install -r requirements.txt
 ```
 
 ## Configuration of Ollama/LM-Studio
