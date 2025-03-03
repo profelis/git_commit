@@ -155,6 +155,58 @@ class GitCommitGenerator:
             logger.error(f"Error with LM-Studio API: {e}")
             return f"Error: Could not generate with LM-Studio: {str(e)}"
 
+    def _get_available_ollama_models(self) -> List[str]:
+        """
+        Get a list of available models from Ollama
+        
+        Returns:
+            List of model names or empty list if failed
+        """
+        try:
+            url = f"{self.ollama_base_url}/api/tags"
+            response = requests.get(url)
+            response.raise_for_status()
+            
+            data = response.json()
+            models = [model.get("name") for model in data.get("models", [])]
+            return models
+            
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error fetching Ollama models: {e}")
+            return []
+
+    def _get_available_lm_studio_models(self) -> List[str]:
+        """
+        Get a list of available models from LM-Studio
+        
+        Returns:
+            List of model names or empty list if failed
+        """
+        try:
+            url = f"{self.lm_studio_base_url}/models"
+            response = requests.get(url)
+            response.raise_for_status()
+            
+            data = response.json()
+            models = [model.get("id") for model in data.get("data", [])]
+            return models
+            
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error fetching LM-Studio models: {e}")
+            return []
+    
+    def get_available_models(self) -> List[str]:
+        """
+        Get available models for the configured provider
+        
+        Returns:
+            List of available model names
+        """
+        if self.provider == LLMProvider.OLLAMA:
+            return self._get_available_ollama_models()
+        else:
+            return self._get_available_lm_studio_models()
+
     def generate_commit_message(self) -> str:
         """
         Generate a commit message based on staged changes.
@@ -221,7 +273,7 @@ def main():
     parser.add_argument(
         '--model', 
         type=str, 
-        default='llama3',
+        default=None,
         help='Model name to use with the provider'
     )
     parser.add_argument(
@@ -263,6 +315,27 @@ def main():
     args = parser.parse_args()
     
     provider = LLMProvider.OLLAMA if args.provider == 'ollama' else LLMProvider.LM_STUDIO
+    
+    # If provider is specified but model is not provided through command line arguments
+    if args.model is None:
+        # Initialize generator without model to get available models
+        generator = GitCommitGenerator(
+            provider=provider,
+            model=None,
+            ollama_base_url=args.ollama_url,
+            lm_studio_base_url=args.lm_studio_url
+        )
+        
+        available_models = generator.get_available_models()
+        
+        if available_models:
+            print(f"Available models for {args.provider}:")
+            for model in available_models:
+                print(f"- {model}")
+            print("\nPlease specify a model with --model parameter.")
+        else:
+            print(f"Failed to retrieve models for {args.provider}. Please check if the service is running.")
+        sys.exit(1)
     
     generator = GitCommitGenerator(
         provider=provider,
