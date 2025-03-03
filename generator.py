@@ -92,11 +92,14 @@ Here are the staged changes:
 Commit message:
 """
         
-        # Generate commit message using the provider
+        # Generate commit message using the provider and clean up the response
         message = self.provider.generate(
             prompt=prompt,
             max_tokens=self.max_tokens,
             temperature=self.temperature
         )
         
-        return message.strip()
+        # Clean up the message by removing any backticks and extra whitespace
+        message = message.strip('`').strip()
+        
+        return message
