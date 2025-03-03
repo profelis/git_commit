@@ -29,8 +29,8 @@ def main():
         '--provider', 
         type=str, 
         choices=['ollama', 'lm-studio'], 
-        default='ollama',
-        help='LLM provider to use (ollama or lm-studio)'
+        default='lm-studio',
+        help='LLM provider to use (ollama or lm-studio) (lm-studio by default)'
     )
     parser.add_argument(
         '--model', 
