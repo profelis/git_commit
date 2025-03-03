@@ -12,7 +12,7 @@ import logging
 import os
 
 # Fix relative imports by using absolute imports instead
-from providers import LLMProvider
+from providers import ProviderType
 from generator import GitCommitGenerator
 from git_utils import commit_changes
 
@@ -76,7 +76,7 @@ def main():
     
     args = parser.parse_args()
     
-    provider = LLMProvider.OLLAMA if args.provider == 'ollama' else LLMProvider.LM_STUDIO
+    provider = ProviderType.OLLAMA if args.provider == 'ollama' else ProviderType.LM_STUDIO
     
     # If provider is specified but model is not provided through command line arguments
     if args.model is None:
