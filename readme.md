@@ -10,6 +10,7 @@ A tool for automatically generating meaningful commit messages based on changes 
 - Supports custom templates for formatting commits
 - Ability to automatically commit with the generated message
 - Supports configuration of generation parameters (temperature, maximum number of tokens)
+- Can be used from any directory with shell helpers or global installation
 
 ## Requirements
 
@@ -18,6 +19,8 @@ A tool for automatically generating meaningful commit messages based on changes 
 - Ollama or LM-Studio, installed and running locally
 
 ## Installation
+
+### Option 1: Development Setup
 
 1. Clone the repository:
 ```bash
@@ -49,15 +52,32 @@ If you don't need clipboard support, you can install only the required dependenc
 pip install requests>=2.31.0
 ```
 
-### Alternative: Using conda
+### Option 2: System-wide Installation
+
+Install directly from GitHub to use from any directory:
 
 ```bash
-# Create a conda environment
-conda create -n git-commit-gen python=3.9
-conda activate git-commit-gen
+pip install git+https://github.com/username/git-commit-generator.git
+```
 
-# Install dependencies
-pip install -r requirements.txt
+After installation, you can use the `git-commit-gen` command from any directory.
+
+### Option 3: Shell Helper Scripts (Portable Use)
+
+If you don't want to install the package globally, you can use the provided shell scripts:
+
+#### Unix/macOS:
+```bash
+# Copy the shell scripts to a convenient location
+ln -s /path/to/git-commit-generator/scripts/git-commit-gen.sh ~/bin/git-commit-gen
+# Make it executable
+chmod +x ~/bin/git-commit-gen
+```
+
+#### Windows:
+```cmd
+# Copy the batch script to a directory in your PATH
+copy \path\to\git-commit-generator\scripts\git-commit-gen.bat %USERPROFILE%\bin\
 ```
 
 ## Configuration of Ollama/LM-Studio
@@ -78,41 +98,57 @@ pip install -r requirements.txt
 
 ### Basic usage
 
+If installed system-wide:
 ```bash
-python git_commit_generator.py
+git-commit-gen
+```
+
+Using shell helper (Unix/macOS):
+```bash
+git-commit-gen.sh
+```
+
+Using shell helper (Windows):
+```bash
+git-commit-gen.bat
+```
+
+Original script usage:
+```bash
+python /path/to/git_commit_generator.py
 ```
 
 ### Usage with LM-Studio
 
 ```bash
-python git_commit_generator.py --provider lm-studio --model your-model-name
+git-commit-gen --provider lm-studio --model your-model-name
 ```
 
 ### Automatic commit with the generated message
 
 ```bash
-python git_commit_generator.py --commit
+git-commit-gen --commit
 ```
 
 ### Usage with a custom commit template
 
 ```bash
-python git_commit_generator.py --template "project: <short description>\n\n<long description>"
+git-commit-gen --template "project: <short description>\n\n<long description>"
 ```
 
 ### Configuration of generation parameters
 
 ```bash
-python git_commit_generator.py --temperature 0.5 --max-tokens 200
+git-commit-gen --temperature 0.5 --max-tokens 200
 ```
 
 ### Full list of parameters
 
 ```
-usage: git_commit_generator.py [-h] [--provider {ollama,lm-studio}] [--model MODEL]
-                              [--ollama-url OLLAMA_URL] [--lm-studio-url LM_STUDIO_URL]
-                              [--max-tokens MAX_TOKENS] [--temperature TEMPERATURE]
-                              [--commit]
+usage: git-commit-gen [-h] [--provider {ollama,lm-studio}] [--model MODEL]
+                      [--ollama-url OLLAMA_URL] [--lm-studio-url LM_STUDIO_URL]
+                      [--max-tokens MAX_TOKENS] [--temperature TEMPERATURE]
+                      [--commit]
 
 Generate commit messages for Git based on staged changes
 
@@ -133,7 +169,7 @@ options:
 You can add this script as a Git alias for convenience:
 
 ```bash
-git config --global alias.generate-commit '!python /path/to/git_commit_generator.py'
+git config --global alias.generate-commit '!git-commit-gen'
 ```
 
 After that, you can use it as:
@@ -151,7 +187,7 @@ git generate-commit
 
 2. Generate a commit message:
    ```bash
-   python git_commit_generator.py
+   git-commit-gen
    ```
 
 3. The output will be something like this:
