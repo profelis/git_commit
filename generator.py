@@ -13,8 +13,8 @@ logger = logging.getLogger('git-commit-generator')
 class GitCommitGenerator:
     def __init__(
         self,
+        model: str,
         provider: ProviderType = ProviderType.OLLAMA,
-        model: str = "llama2",
         ollama_base_url: str = "http://localhost:11434",
         lm_studio_base_url: str = "http://localhost:1234/v1",
         max_tokens: int = 150,

@@ -82,8 +82,8 @@ def main():
     if args.model is None:
         # Initialize generator without model to get available models
         generator = GitCommitGenerator(
-            provider=provider,
             model=None,
+            provider=provider,
             ollama_base_url=args.ollama_url,
             lm_studio_base_url=args.lm_studio_url
         )
@@ -100,8 +100,8 @@ def main():
         sys.exit(1)
     
     generator = GitCommitGenerator(
-        provider=provider,
         model=args.model,
+        provider=provider,
         ollama_base_url=args.ollama_url,
         lm_studio_base_url=args.lm_studio_url,
         max_tokens=args.max_tokens,
