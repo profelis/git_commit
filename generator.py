@@ -3,6 +3,7 @@ Git Commit Generator core functionality
 """
 
 import logging
+import re
 from typing import List, Optional
 
 from providers import ProviderType, create_provider
@@ -98,6 +99,21 @@ Commit message:
             max_tokens=self.max_tokens,
             temperature=self.temperature
         )
+        
+        print("Generated message:\n///////\n", message)
+        print("////")
+        
+        # Remove any content inside <think></think> tags
+        # This handles:
+        # 1. Complete <think>...</think> blocks
+        # 2. Orphaned </think> tags when opening tag is missing
+        # 3. Orphaned <think> tags when closing tag is missing
+        
+        # First remove complete <think>...</think> blocks
+        message = re.sub(r'<think>.*?</think>', '', message, flags=re.DOTALL)
+        
+        # Remove orphaned </think> tags and any text before them
+        message = re.sub(r'.*</think>', '', message, flags=re.DOTALL)
         
         # Clean up the message by removing any backticks and extra whitespace
         message = message.strip('`').strip()
