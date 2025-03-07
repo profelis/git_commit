@@ -26,6 +26,13 @@ logger = logging.getLogger('git-commit-generator')
 def main():
     parser = argparse.ArgumentParser(description='Generate Git commit messages based on staged changes')
     parser.add_argument(
+        'model_name', 
+        type=str, 
+        nargs='?',  # Make positional argument optional
+        default=None,
+        help='Model name to use with the provider'
+    )
+    parser.add_argument(
         '--provider', 
         type=str, 
         choices=['ollama', 'lm-studio'], 
@@ -36,7 +43,7 @@ def main():
         '--model', 
         type=str, 
         default=None,
-        help='Model name to use with the provider'
+        help='Model name to use with the provider (alternative to positional argument)'
     )
     parser.add_argument(
         '--ollama-url', 
@@ -76,10 +83,13 @@ def main():
     
     args = parser.parse_args()
     
+    # Use the model name from either the positional argument or --model flag
+    model_name = args.model if args.model is not None else args.model_name
+    
     provider = ProviderType.OLLAMA if args.provider == 'ollama' else ProviderType.LM_STUDIO
     
     # If provider is specified but model is not provided through command line arguments
-    if args.model is None:
+    if model_name is None:
         # Initialize generator without model to get available models
         generator = GitCommitGenerator(
             model=None,
@@ -94,13 +104,14 @@ def main():
             print(f"Available models for {args.provider}:")
             for model in available_models:
                 print(f"- {model}")
-            print("\nPlease specify a model with --model parameter.")
+            print("\nPlease specify a model either as a positional argument or with --model parameter.")
+            print("Example: git-commit-gen <modelname> OR git-commit-gen --model <modelname>")
         else:
             print(f"Failed to retrieve models for {args.provider}. Please check if the service is running.")
         sys.exit(1)
     
     generator = GitCommitGenerator(
-        model=args.model,
+        model=model_name,
         provider=provider,
         ollama_base_url=args.ollama_url,
         lm_studio_base_url=args.lm_studio_url,
