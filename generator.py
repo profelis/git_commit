@@ -100,9 +100,6 @@ Commit message:
             temperature=self.temperature
         )
         
-        print("Generated message:\n///////\n", message)
-        print("////")
-        
         # Remove any content inside <think></think> tags
         # This handles:
         # 1. Complete <think>...</think> blocks
