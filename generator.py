@@ -99,6 +99,8 @@ Commit message:
             max_tokens=self.max_tokens,
             temperature=self.temperature
         )
+
+        raw_message = message
         
         # Remove any content inside <think></think> tags
         # This handles:
@@ -114,5 +116,11 @@ Commit message:
         
         # Clean up the message by removing any backticks and extra whitespace
         message = message.strip('`').strip()
+
+        if message == "":
+            if raw_message != "":
+                logger.warning("Empty commit message generated. Raw message: %s", raw_message)
+            logger.warning("Empty commit message generated. Retrying with a different prompt.")
+            return "Error: Empty commit message generated. Please try again."
         
         return message
