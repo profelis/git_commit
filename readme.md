@@ -11,6 +11,17 @@ A tool for automatically generating meaningful commit messages based on changes 
 - Ability to automatically commit with the generated message
 - Supports configuration of generation parameters (temperature, maximum number of tokens)
 - Can be used from any directory with shell helpers or global installation
+- **NEW:** Optionally includes recent commit messages for changed files as style/content samples for the LLM (see `--use-history`)
+### Using recent commit history as samples
+
+You can use the `--use-history` flag to include the last 3-5 commit messages for each staged file as style and content samples for the LLM. This can help the model generate commit messages that are more consistent with your project's history.
+
+Example:
+```bash
+git-commit-gen --use-history
+```
+
+This will fetch recent commit messages for each staged file and include them in the prompt to the LLM.
 
 ## Requirements
 
@@ -148,7 +159,7 @@ git-commit-gen --temperature 0.5 --max-tokens 200
 usage: git-commit-gen [-h] [--provider {ollama,lm-studio}] [--model MODEL]
                       [--ollama-url OLLAMA_URL] [--lm-studio-url LM_STUDIO_URL]
                       [--max-tokens MAX_TOKENS] [--temperature TEMPERATURE]
-                      [--commit]
+                      [--commit] [--use-history]
 
 Generate commit messages for Git based on staged changes
 
@@ -162,6 +173,7 @@ options:
   --temperature TEMPERATURE    temperature parameter for generation, default is 0.7
   --commit                     automatically commit changes with the generated message
   --template TEMPLATE          template for commit message format (e.g., "project: <short description>\n\n<long description>")
+  --use-history                include recent commit messages for changed files as samples for the LLM
 ```
 
 ## Integration with Git (optional)
