@@ -7,11 +7,10 @@ import re
 from typing import List, Optional
 
 from providers import ProviderType, create_provider
-from git_utils import check_staged_changes
+from git_utils import get_recent_commit_messages_for_files
 
 logger = logging.getLogger('git-commit-generator')
 
-from git_utils import check_staged_changes, get_recent_commit_messages_for_files
 
 class GitCommitGenerator:
     def __init__(
@@ -64,27 +63,53 @@ class GitCommitGenerator:
         Returns:
             Generated commit message or error message
         """
-        # Check for staged changes
-        has_changes, diff_output = check_staged_changes()
-        if not has_changes:
+        import subprocess
+        # Limits
+        MAX_FILES = 50
+        MAX_DIFF_LINES_PER_FILE = 200
+        MAX_DIFF_LINES_EXCLUDE = 10000
+
+        # Get staged files
+        try:
+            staged_files_command = ["git", "diff", "--staged", "--name-only"]
+            staged_files_output = subprocess.check_output(staged_files_command, universal_newlines=True)
+            staged_files = [f.strip() for f in staged_files_output.splitlines() if f.strip()]
+        except Exception as e:
+            logger.error(f"Error getting staged files: {e}")
+            return "Error: Could not get staged files."
+
+        if not staged_files:
             return "Error: No staged changes found. Use 'git add' to stage changes first."
 
+        # Limit number of files
+        limited_files = staged_files[:MAX_FILES]
+        diff_contexts : List[str] = []
+        for file in limited_files:
+            try:
+                diff_cmd = ["git", "diff", "--staged", "--", file]
+                diff_output = subprocess.check_output(diff_cmd, universal_newlines=True)
+                diff_lines = diff_output.splitlines()
+                if len(diff_lines) > MAX_DIFF_LINES_EXCLUDE:
+                    logger.info(f"Excluding file {file} from diff context (diff too large: {len(diff_lines)} lines)")
+                    continue
+                # Limit lines per file
+                limited_diff = "\n".join(diff_lines[:MAX_DIFF_LINES_PER_FILE])
+                diff_contexts.append(f"File: {file}\n{limited_diff}")
+            except Exception as e:
+                logger.error(f"Error getting diff for {file}: {e}")
+                continue
+
+        if not diff_contexts:
+            return "Error: No suitable staged changes to generate a commit message."
+
+        diff_output = "\n\n".join(diff_contexts)
+
+        # History context (unchanged)
         history_context = ""
         if self.use_history:
-            # Get list of staged files
             try:
-                staged_files_command = ["git", "diff", "--staged", "--name-only"]
-                import subprocess
-                staged_files_output = subprocess.check_output(staged_files_command, universal_newlines=True)
-                staged_files = [f.strip() for f in staged_files_output.splitlines() if f.strip()]
-            except Exception as e:
-                logger.error(f"Error getting staged files for history: {e}")
-                staged_files = []
-            if staged_files:
-                from git_utils import get_recent_commit_messages_for_files
-                file_histories = get_recent_commit_messages_for_files(staged_files, n=5)
-                # Format as context for the LLM
-                history_lines = []
+                file_histories = get_recent_commit_messages_for_files(limited_files, n=5)
+                history_lines : List[str] = []
                 for fname, messages in file_histories.items():
                     if messages:
                         history_lines.append(f"Recent commit messages for {fname}:")
@@ -93,6 +118,8 @@ class GitCommitGenerator:
                         history_lines.append("")
                 if history_lines:
                     history_context = "\n".join(history_lines)
+            except Exception as e:
+                logger.error(f"Error getting commit history context: {e}")
 
         # Create a prompt for the language model
         if self.commit_template:
@@ -107,10 +134,14 @@ Where:
         else:
             template_instructions = """
 Follow these guidelines:
+0. Don't write anything about commit message, just output the commit message
 1. Start with a type (feat, fix, docs, style, refactor, test, chore)
-2. Keep the message under 50 characters for the first line
+2. Keep the message under 80 characters for the first line
 3. Be specific about what changed and why
 4. Use imperative mood (e.g., "Add feature" not "Added feature")
+5. Write one commit for all related changes
+6. After first line, add a blank line before the long description
+7. Use long description to explain the context, motivation, and any relevant details
 """
 
         prompt = f"""
@@ -119,23 +150,22 @@ Generate a concise and descriptive Git commit message based on the following cha
 """
         if history_context:
             prompt += f"\nHere are recent commit messages for the changed files (use these as style and content samples):\n\n{history_context}\n"
-        prompt += f"\nHere are the staged changes:\n\n{diff_output}\n\nCommit message:\n"
+        prompt += f"\nHere are the staged changes (showing up to {MAX_FILES} files, {MAX_DIFF_LINES_PER_FILE} lines per file):\n\n{diff_output}\n\nCommit message:\n"
 
         if not self.provider:
             return "Error: No model/provider configured."
 
         # Generate commit message using the provider and clean up the response
         message = self.provider.generate(
-            prompt=prompt,
-            max_tokens=self.max_tokens,
-            temperature=self.temperature
+            prompt=prompt, max_tokens=self.max_tokens, temperature=self.temperature
         )
 
         raw_message = message
 
-        # Remove any content inside <think></think> tags
+        # Remove any content inside <think>...</think> tags, including the tags themselves
         message = re.sub(r'<think>.*?</think>', '', message, flags=re.DOTALL)
-        message = re.sub(r'.*</think>', '', message, flags=re.DOTALL)
+        # Remove any remaining standalone <think> or </think> tags
+        message = re.sub(r'</?think>', '', message)
         message = message.strip('`').strip()
 
         if message == "":
